@@ -52,11 +52,17 @@
         &lt;i&gt;&lt;%= prices[i] %&gt;&lt;/i&gt;&amp;emsp;
     &lt;% } %&gt;
 </pre>
-&rarr;
-<% for (int i = 0; i < prices.length; i++) { %>
-<i><%= prices[i] %></i>&emsp;
-<% } %>
 
+<table class="table table-bordered">
+    <tr>
+        <th>Price</th>
+    </tr>
+    <% for (int i = 0; i < prices.length; i++) { %>
+    <tr>
+        <td> <i><%= prices[i] %></i>&emsp;</td>
+    </tr>
+    <% } %>
+</table>
 
 <h2>Взаємодія з файлами</h2>
 &lt;jsp:include page="WEB-INF/fragment.jsp" /&gt; &rarr;
