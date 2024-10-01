@@ -1,10 +1,20 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%
+    String contextPath = request.getContextPath();   // аналог ~/
+
     String pageBody = (String) request.getAttribute( "body" );
     if ( pageBody == null ) {
         pageBody = "not_found.jsp";
     }
-    String contextPath = request.getContextPath();   // аналог ~/
+
+    boolean isSigned = false;
+    Object signature = request.getAttribute("signature");
+    if ( signature instanceof Boolean ) {
+        isSigned = (Boolean) signature;
+    }
+    if ( !isSigned ) {
+        pageBody = "insecure.jsp";
+    }
 %>
 <html>
 <head>
