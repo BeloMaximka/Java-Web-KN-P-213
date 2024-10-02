@@ -1,5 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%
+
+    String hash = (String) request.getAttribute( "hash" );
+%>
 <h1>Файл налаштувань <code>web.xml</code></h1>
+<h2>Hash: <%=hash%></h2>
 <p>
     Файл <code>web.xml</code> дозволяє доналаштувати веб-сервер (Tomcat або інші)
     під даний проєкт.

@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%
-    String contextPath = request.getContextPath();   // аналог ~/
+    String contextPath = request.getContextPath();
 
     String pageBody = (String) request.getAttribute( "body" );
     if ( pageBody == null ) {

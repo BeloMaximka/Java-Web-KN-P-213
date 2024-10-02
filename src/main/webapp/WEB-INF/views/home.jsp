@@ -1,6 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%
+    String hash = (String) request.getAttribute( "hash" );
+%>
+
 
 <h1>Java web. JSP</h1>
+<h2>Hash: <%=hash%></h2>
 <img src="img/Java_Logo.png" alt="logo" width="100" />
 
 <p>
