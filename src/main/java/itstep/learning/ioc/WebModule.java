@@ -4,6 +4,7 @@ import com.google.inject.servlet.ServletModule;
 import itstep.learning.filters.CharsetFilter;
 import itstep.learning.filters.SecurityFilter;
 import itstep.learning.servlets.HomeServlet;
+import itstep.learning.servlets.ShopServlet;
 import itstep.learning.servlets.WebXmlServlet;
 
 public class WebModule  extends ServletModule {
@@ -14,5 +15,6 @@ public class WebModule  extends ServletModule {
 
         serve("/").with(HomeServlet.class);
         serve("/web-xml").with(WebXmlServlet.class);
+        serve("/shop").with(ShopServlet.class);
     }
 }

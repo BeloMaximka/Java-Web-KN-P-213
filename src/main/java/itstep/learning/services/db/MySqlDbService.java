@@ -1,9 +1,12 @@
 package itstep.learning.services.db;
 
+import com.google.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+@Singleton
 public class MySqlDbService implements DbService {
     private Connection connection;
 

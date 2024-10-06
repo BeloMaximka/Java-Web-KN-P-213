@@ -2,6 +2,7 @@ package itstep.learning.servlets;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import itstep.learning.dal.dao.AuthDao;
 import itstep.learning.services.filenames.FileNameService;
 import itstep.learning.services.hash.HashService;
 import itstep.learning.services.kdf.KdfService;
@@ -15,27 +16,18 @@ import java.io.IOException;
 
 @Singleton
 public class HomeServlet extends HttpServlet {
-    private final HashService hashService;
-    private final KdfService kdfService;
-    private final FileNameService fileNameService;
+    private final AuthDao authDao;
 
     @Inject
-    HomeServlet(HashService hashService, KdfService kdfService, FileNameService fileNameService) {
-        this.hashService = hashService;
-        this.kdfService = kdfService;
-        this.fileNameService = fileNameService;
+    HomeServlet(AuthDao authDao) {
+        this.authDao = authDao;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String[] filenames = new String[10];
-        filenames[0] = fileNameService.generateFilename(null);
-        for (int i = 1; i < 10; i++) {
-            filenames[i] = fileNameService.generateFilename(10 + i);
-        }
-        req.setAttribute("filenames", filenames);
+        String dbMessage = authDao.install() ? "Install OK" : "Uninstall FAILED";
 
-        req.setAttribute("hash", hashService.hash("123") + " " + kdfService.dk("password", "salt.4") + " " + kdfService.hashCode());
+        req.setAttribute("hash", dbMessage);
         req.setAttribute("body", "home.jsp");
         req.getRequestDispatcher("WEB-INF/views/_layout.jsp").forward(req, resp);
     }

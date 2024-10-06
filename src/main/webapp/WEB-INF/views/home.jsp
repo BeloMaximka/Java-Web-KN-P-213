@@ -1,20 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%
     String hash = (String) request.getAttribute( "hash" );
-    String[] filenames = (String[]) request.getAttribute("filenames");
 %>
 
 
 <h1>Java web. JSP</h1>
 <h2>Hash: <%=hash%></h2>
 <img src="img/Java_Logo.png" alt="logo" width="100" />
-
-<ul>
-    <li>Filename with default length: <%= filenames[0] %></li>
-    <% for (int i = 1; i < filenames.length; i++) { %>
-    <li>Filename: <%= filenames[i] %></li>
-    <% } %>
-</ul>
 
 <p>
     JSP - Java Server Pages - технологія веб-розробки з динамічним
