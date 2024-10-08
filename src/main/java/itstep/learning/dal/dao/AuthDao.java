@@ -1,14 +1,18 @@
 package itstep.learning.dal.dao;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import itstep.learning.dal.dto.Token;
+import itstep.learning.dal.dto.User;
 import itstep.learning.services.db.DbService;
 import itstep.learning.services.kdf.KdfService;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.Date;
+import java.util.UUID;
 import java.util.logging.Logger;
 
+@Singleton
 public class AuthDao {
     private final DbService dbService;
     private final Logger logger;
@@ -19,6 +23,65 @@ public class AuthDao {
         this.dbService = dbService;
         this.logger = logger;
         this.kdfService = kdfService;
+    }
+
+    public User authenticate( String login, String password ) {
+        String sql = "SELECT * FROM users_access a " +
+                " JOIN users u ON a.user_id = u.user_id " +
+                " JOIN users_roles r ON a.role_id = r.role_id " +
+                " LEFT JOIN tokens t ON u.user_id = t.user_id " +
+                " WHERE a.login = ? ";
+        try( PreparedStatement prep = dbService.getConnection().prepareStatement( sql ) ) {
+            prep.setString( 1, login );
+            ResultSet rs = prep.executeQuery();
+            if( rs.next() ) {  // є такий login
+                String salt = rs.getString( "salt" );
+                String dk   = rs.getString( "dk"   );
+                // повторюємо процедуру DK і перевіряємо чи збігаються результати перетворень
+                if( kdfService.dk( password, salt ).equals( dk ) ) {
+                    User user = new User( rs );
+                    Token token ;
+                    try {
+                        token = new Token( rs );
+                    }
+                    catch( SQLException ignored ) {
+                        token = null;
+                    }
+                    if( token == null ) {
+                        token = this.createToken( user );
+                    }
+                    user.setToken( token );
+                    return user;
+                }
+            }
+        }
+        catch( SQLException ex ) {
+            logger.warning( ex.getMessage() + " -- " + sql );
+        }
+        return null;
+    }
+
+    public Token createToken( User user ) {
+        Token token = new Token();
+        token.setTokenId( UUID.randomUUID() );
+        token.setUserId( user.getUserId() );
+        token.setIat( new Date( System.currentTimeMillis() ) );
+        token.setExp( new Date( System.currentTimeMillis() + 60000 ) );
+
+        String sql = "INSERT INTO tokens ( token_id, user_id, iat, exp ) " +
+                " VALUES ( ?, ?, ?, ? )";
+        try( PreparedStatement prep = dbService.getConnection().prepareStatement( sql ) ) {
+            prep.setString( 1, token.getTokenId().toString() );
+            prep.setString( 2, token.getUserId().toString() );
+            prep.setTimestamp( 3, new Timestamp( token.getIat().getTime() ) );
+            prep.setTimestamp( 4, new Timestamp( token.getExp().getTime() ) );
+            prep.executeUpdate();
+            return token;
+        }
+        catch( SQLException ex ) {
+            logger.warning( ex.getMessage() + " -- " + sql );
+        }
+        return null;
     }
 
     public boolean install() {
@@ -88,9 +151,9 @@ public class AuthDao {
                 "'81661d9f-815d-11ef-bb48-fcfbf6dd7098'," +
                 "'admin', ?, ?, 1) " +
                 "ON DUPLICATE KEY UPDATE " +
-                "`user_id` = 'Administrator', " +
-                "`role_id` = 'admin@change.me', " +
-                "`login` = '1970-01-01'," +
+                "`user_id` = '7dd7d8a9-815e-11ef-bb48-fcfbf6dd7098', " +
+                "`role_id` = '81661d9f-815d-11ef-bb48-fcfbf6dd7098', " +
+                "`login` = 'admin'," +
                 "`salt` = ?," +
                 "`dk` = ?," +
                 "`is_active` = 1";

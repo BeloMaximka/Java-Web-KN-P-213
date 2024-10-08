@@ -3,6 +3,11 @@ body {
     flex-direction: column;
     min-height: 100vh;
 }
-.spacer {
+#app-container {
+    flex-direction: column;
+    display: flex;
+    flex: 1;
+}
+.container {
     flex: 1;
 }
