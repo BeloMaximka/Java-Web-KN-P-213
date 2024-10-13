@@ -1,28 +1,54 @@
 package itstep.learning.servlets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.AuthDao;
 import itstep.learning.dal.dto.User;
+import itstep.learning.rest.RestMetaData;
+import itstep.learning.rest.RestServlet;
+import itstep.learning.services.form.FormParseResult;
+import itstep.learning.services.form.FormParseService;
+import itstep.learning.storage.StorageService;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Base64;
+import java.util.Date;
 
 @Singleton
-public class AuthServlet extends HttpServlet {
+public class AuthServlet extends RestServlet {
     private final AuthDao authDao;
+    private final FormParseService formParseService;
+    private final StorageService storageService;
 
     @Inject
-    public AuthServlet(AuthDao authDao) {
+    public AuthServlet(AuthDao authDao, FormParseService formParseService, StorageService storageService) {
         this.authDao = authDao;
+        this.formParseService = formParseService;
+        this.storageService = storageService;
+    }
+
+    @Override
+    protected  void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        this.restResponse.setMeta(new RestMetaData()
+                .setUri("/auth")
+                .setMethod(req.getMethod())
+                .setName("KN-P-213 Authentication API")
+                .setServerTime( new Date())
+                .setAllowedMethods(new String[]{"GET", "POST"})
+        );
+        super.service(req, resp);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        FormParseResult formParseResult = formParseService.parse(req);
+        String savedName = storageService.saveFile(formParseResult.getFiles().get("signup-avatar"));
+        super.sendResponse("files: " + formParseResult.getFiles().size() + ", fields: " + formParseResult.getFields().size() + ", name:" + savedName);
     }
 
     @Override
@@ -37,7 +63,6 @@ public class AuthServlet extends HttpServlet {
         // Декодуємо їх за Base64
         // Розділяємо за першим символом ':'
         // запитуємо автентифікацію в DAO
-        RestResponse restResponse = new RestResponse();
         try {
             // Вилучаємо заголовок Authorization
             String authHeader = req.getHeader( "Authorization" );
@@ -73,59 +98,16 @@ public class AuthServlet extends HttpServlet {
                 throw new ParseException( "Credentials rejected", 401 );
             }
 
-            restResponse.setStatus( "success" );
-            restResponse.setCode( 200 );
-            restResponse.setData( user );
+            restResponse.setData( user);
+            sendResponse(200);
         }
         catch( ParseException ex ) {
-            restResponse.setStatus( "error" );
-            restResponse.setCode( ex.getErrorOffset() );
-            restResponse.setData( ex.getMessage() );
-        }
-
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        resp.setContentType( "application/json" );
-        resp.getWriter().print( gson.toJson( restResponse ) );
-    }
-
-    class RestResponse {
-        private int code;
-        private String status;
-        private Object data;
-
-        public RestResponse() {
-        }
-
-        public RestResponse(int code, String status, Object data) {
-            this.code = code;
-            this.status = status;
-            this.data = data;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
-        public void setCode(int code) {
-            this.code = code;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public Object getData() {
-            return data;
-        }
-
-        public void setData(Object data) {
-            this.data = data;
+            restResponse.setData( ex.getMessage());
+            sendResponse(ex.getErrorOffset());
         }
     }
+
+
 }
 /*
 Д.З. Створити сторінку для автоматизованого тестування АРІ

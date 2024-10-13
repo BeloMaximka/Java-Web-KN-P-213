@@ -1,7 +1,10 @@
 package itstep.learning.services.filenames;
 
+import com.google.inject.Singleton;
+
 import java.util.Random;
 
+@Singleton
 public class RandomFileNameService implements FileNameService {
     private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
     private static final int DEFAULT_ENTROPY_BITS = 64;
