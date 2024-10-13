@@ -93,7 +93,7 @@ function App({contextPath}) {
                         {state.authUser && <div>
                             <b>{state.authUser.userName}</b>
                             <button type="button" className="btn btn-outline-warning"
-                                    onClick={() => dispatch({type: 'logout'}) }>
+                                    onClick={() => dispatch({type: 'logout'})}>
                                 <i className="bi bi-box-arrow-right"></i>
                             </button>
                         </div>}
@@ -108,6 +108,7 @@ function App({contextPath}) {
             {state.page === 'home' && <Home/>}
             {state.page === 'cart' && <Cart/>}
             {state.page === 'signup' && <Signup/>}
+            {state.page === 'authtest' && <AuthTest/>}
         </main>
         <div className="spacer"></div>
         <footer className="bg-body-tertiary px-3 py-2">
@@ -116,6 +117,7 @@ function App({contextPath}) {
 
         <b onClick={() => dispatch({type: "navigate", payload: "home"})}>Домашня</b>
         <b onClick={() => dispatch({type: "navigate", payload: "cart"})}>Кошик</b>
+        <b onClick={() => dispatch({type: "navigate", payload: "authtest"})}>AuthTest</b>
     </AppContext.Provider>;
 }
 
@@ -135,9 +137,141 @@ function Home() {
     </div>;
 }
 
+function AuthTest() {
+    const {contextPath} = React.useContext(AppContext);
+    const [results, setResults] = React.useState([]);
+
+    const sendRequest = async (config, expectedStatusCode, expectedStatus) => {
+        try {
+            const response = await fetch(config.url, {
+                method: config.method,
+                headers: config.headers,
+            });
+
+            const data = await response.json();
+            const { code } = data.status;
+            const isCorrect = code === expectedStatusCode
+
+            setResults(prevResults => [
+                ...prevResults,
+                {
+                    request: config,
+                    response: data,
+                    isCorrect,
+                }
+            ]);
+        } catch (error) {
+            const response = { code: 500, status: 'error', data: 'Internal Server Error' };
+            const isCorrect = false;
+
+            setResults(prevResults => [
+                ...prevResults,
+                {
+                    request: config,
+                    response,
+                    isCorrect,
+                }
+            ]);
+        }
+    };
+
+    const runTests = () => {
+        setResults([]);
+
+        sendRequest(
+            {
+                method: 'GET',
+                url: `${contextPath}/auth`,
+            },
+            401,
+            'error'
+        );
+
+        sendRequest(
+            {
+                method: 'GET',
+                url: `${contextPath}/auth`,
+                headers: {
+                    Authorization: 'Bearer sometoken',
+                },
+            },
+            400,
+            'error'
+        );
+
+        sendRequest(
+            {
+                method: 'GET',
+                url: `${contextPath}/auth`,
+                headers: {
+                    Authorization: 'Basic ' + btoa('234:123'),
+                },
+            },
+            401,
+            'success'
+        );
+
+        sendRequest(
+            {
+                method: 'GET',
+                url: `${contextPath}/auth`,
+                headers: {
+                    Authorization: 'Basic ' + btoa('admin:root'),
+                },
+            },
+            200,
+            'success'
+        );
+    };
+
+    return (
+        <div>
+            <h1>Automated AUTH Testing</h1>
+            <button onClick={runTests}>Run Tests</button>
+            <div>
+                <div className="accordion accordion-flush" id="accordionFlushExample">
+                    {results.map((result, index) => (
+                        <div key={'test' + index} className="accordion-item" style={{
+                            backgroundColor: result.isCorrect ? 'lightgreen' : 'lightcoral',
+                            padding: '10px',
+                            margin: '10px 0'
+                        }}>
+                            <h2 className="accordion-header">
+                                <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" style={{
+                                    backgroundColor: result.isCorrect ? 'lightgreen' : 'lightcoral',
+                                    padding: '10px',
+                                    margin: '10px 0'
+                                }}
+                                        data-bs-target={'#test' + index} >
+                                    Request {index + 1}: {result.isCorrect ? 'PASS' : 'FAIL'}
+                                </button>
+                            </h2>
+                            <div id={'test' + index} className="accordion-collapse collapse"
+                                 data-bs-parent="#accordionFlushExample">
+                                <div className="accordion-body">
+                                    <div key={index} style={{
+                                        backgroundColor: result.isCorrect ? 'lightgreen' : 'lightcoral',
+                                        padding: '10px',
+                                        margin: '10px 0'
+                                    }}>
+                                        <h3>Request {index + 1}</h3>
+                                        <pre>{JSON.stringify(result.request, null, 2)}</pre>
+                                        <h3>Response:</h3>
+                                        <pre>{JSON.stringify(result.response, null, 2)}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function Signup() {
     const {contextPath} = React.useContext(AppContext);
-    const onFormSubmit = React.useCallback( e => {
+    const onFormSubmit = React.useCallback(e => {
         e.preventDefault();
         const formData = new FormData(e.target);
         fetch(`${contextPath}/auth`, {
@@ -177,7 +311,7 @@ function Signup() {
                 </div>
                 <div className="col col-6">
                     <div className="input-group mb-3">
-                        <span className="input-group-text" id="email-addon"><i className="bi bi-envelope-at"></i></span>
+                    <span className="input-group-text" id="email-addon"><i className="bi bi-envelope-at"></i></span>
                         <input type="text" className="form-control"
                                name="signup-email" placeholder="Ел. пошта"
                                aria-label="Ел. пошта" aria-describedby="email-addon"/>
